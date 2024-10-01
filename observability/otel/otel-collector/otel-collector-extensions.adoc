@@ -15,7 +15,7 @@ The BearerTokenAuth Extension is an authenticator for receivers and exporters th
 You can use the OpenTelemetry Collector custom resource to configure client authentication and server authentication for the BearerTokenAuth Extension on the receiver and exporter side.
 This extension supports traces, metrics, and logs.
 
-:FeatureName: The BearerTokenAuth Extension
+:FeatureName: BearerTokenAuth Extension
 include::snippets/technology-preview.adoc[]
 
 .OpenTelemetry Collector custom resource with client and server authentication configured for the BearerTokenAuth Extension
@@ -25,20 +25,20 @@ include::snippets/technology-preview.adoc[]
   config: |
     extensions:
       bearertokenauth:
-        scheme: "Bearer" # <1>
-        token: "<token>" # <2>
-        filename: "<token_file>" # <3>
+        scheme: "Bearer"
+        token: "bf69c1ab606665894cdf9e7d652713cade79ba56" # <1>
+        filename: "/tokens/my-token" # <2>
 
     receivers:
       otlp:
         protocols:
           http:
             auth:
-              authenticator: bearertokenauth # <4>
+              authenticator: bearertokenauth # <3>
     exporters:
       otlp:
         auth:
-          authenticator: bearertokenauth # <5>
+          authenticator: bearertokenauth # <4>
 
     service:
       extensions: [bearertokenauth]
@@ -48,80 +48,55 @@ include::snippets/technology-preview.adoc[]
           exporters: [otlp]
 # ...
 ----
-<1> You can configure the BearerTokenAuth Extension to send a custom `scheme`. The default is `Bearer`.
-<2> You can add the BearerTokenAuth Extension token as metadata to identify a message.
-<3> Path to a file that contains an authorization token that is transmitted with every message.
-<4> You can assign the authenticator configuration to an OTLP Receiver.
-<5> You can assign the authenticator configuration to an OTLP Exporter.
+<1> Example token. You need to provide your own.
+<2> Example path file. You need to provide your own.
+<3> You can assign the authenticator configuration to an OTLP Receiver.
+<4> You can assign the authenticator configuration to an OTLP Exporter.
 
-[id="oauth2client-extension_{context}"]
-== OAuth2Client Extension
+.Parameters used by the BearerTokenAuth Extension
+[options="header"]
+[cols="a,a,a"]
+|===
+|Parameter |Description |Default
 
-The OAuth2Client Extension is an authenticator for exporters that are based on the HTTP and the gRPC protocol.
-Client authentication for the OAuth2Client Extension is configured in a separate section in the OpenTelemetry Collector custom resource.
-This extension supports traces, metrics, and logs.
+|`scheme`
+|Configures the BearerTokenAuth Extension to send a custom authentication `scheme`.
+|`Bearer`
 
-:FeatureName: The OAuth2Client Extension
-include::snippets/technology-preview.adoc[]
+|`token`
+|Specifies the token to add as metadata for identifying a message. Ignored if `filename` is specified.
+|N/A
 
-.OpenTelemetry Collector custom resource with client authentication configured for the OAuth2Client Extension
-[source,yaml]
-----
-# ...
-  config: |
-    extensions:
-      oauth2client:
-        client_id: <client_id> # <1>
-        client_secret: <client_secret> # <2>
-        endpoint_params: # <3>
-          audience: <audience>
-        token_url: https://example.com/oauth2/default/v1/token # <4>
-        scopes: ["api.metrics"] # <5>
-        # tls settings for the token client
-        tls: # <6>
-          insecure: true # <7>
-          ca_file: /var/lib/mycert.pem # <8>
-          cert_file: <cert_file> # <9>
-          key_file: <key_file> # <10>
-        timeout: 2s # <11>
+|`filename`
+|Path to a file that contains an authorization token, transmitted with every message.
+|N/A
 
-    receivers:
-      otlp:
-        protocols:
-          http: {}
+|===
 
-    exporters:
-      otlp:
-        auth:
-          authenticator: oauth2client # <12>
+=== Troubleshooting the BearerTokenAuth Extension
 
-    service:
-      extensions: [oauth2client]
-      pipelines:
-        traces:
-          receivers: [otlp]
-          exporters: [otlp]
-# ...
-----
-<1> Client identifier, which is provided by the identity provider.
-<2> Confidential key used to authenticate the client to the identity provider.
-<3> Further metadata, in the key-value pair format, which is transferred during authentication. For example, `audience` specifies the intended audience for the access token, indicating the recipient of the token.
-<4> The URL of the OAuth2 token endpoint, where the Collector requests access tokens.
-<5> The scopes define the specific permissions or access levels requested by the client.
-<6> The Transport Layer Security (TLS) settings for the token client, which is used to establish a secure connection when requesting tokens.
-<7> When set to `true`, configures the Collector to use an insecure or non-verified TLS connection to call the configured token endpoint.
-<8> The path to a Certificate Authority (CA) file that is used to verify the server's certificate during the TLS handshake.
-<9> The path to the client certificate file that the client must use to authenticate itself to the OAuth2 server if required.
-<10> The path to the client's private key file that is used with the client certificate if needed for authentication.
-<11> Sets a timeout for the token client's request.
-<12> You can assign the authenticator configuration to an OTLP exporter.
+If you encounter issues with the BearerTokenAuth Extension, use the following troubleshooting steps to help diagnose and resolve common problems.
+
+==== Authorization failures
+
+If authentication fails when using the BearerTokenAuth Extension, check the following:
+
+.Procedure 
+
+- Verify the token or file content: ensure that the `token` specified in the configuration or the file at `filename` contains a valid authorization token. A token mismatch or an expired token could result in authentication failure.
++ 
+- Check for conflicts between `token` and `filename`: if both `token` and `filename` are specified, the `token` field will be ignored. Ensure you are using the correct configuration to supply the token, and verify that the file at `filename` is accessible and contains the expected token.
++
+- File permissions: if you are using a file to store the token (via `filename`), ensure that the OpenTelemetry Collector has permission to read the file. Check file permissions and ownership.
++
+- Verify the `scheme` parameter: ensure that the `scheme` is correctly set in the configuration. The default value is `Bearer`, but if you are using a custom scheme, verify that it is supported by the receiver or exporter you are using.
 
 [id="filestorage-extension_{context}"]
 == File Storage Extension
 
 The File Storage Extension supports traces, metrics, and logs. This extension can persist the state to the local file system. This extension persists the sending queue for the OpenTelemetry Protocol (OTLP) exporters that are based on the HTTP and the gRPC protocols. This extension requires the read and write access to a directory. This extension can use a default directory, but the default directory must already exist.
 
-:FeatureName: The File Storage Extension
+:FeatureName: File Storage Extension
 include::snippets/technology-preview.adoc[]
 
 .OpenTelemetry Collector custom resource with a configured File Storage Extension that persists an OTLP sending queue
@@ -132,78 +107,176 @@ include::snippets/technology-preview.adoc[]
     extensions:
       file_storage/all_settings:
         directory: /var/lib/otelcol/mydir # <1>
-        timeout: 1s # <2>
+        timeout: 1s
         compaction:
-          on_start: true # <3>
-          directory: /tmp/ # <4>
-          max_transaction_size: 65_536 # <5>
-        fsync: false # <6>
+          on_start: true
+          directory: /tmp/ # <2>
+          max_transaction_size: 65_536
+        fsync: false
 
     exporters:
       otlp:
         sending_queue:
-          storage: file_storage/all_settings # <7>
+          storage: file_storage/all_settings # <3>
 
     service:
-      extensions: [file_storage/all_settings] # <8>
+      extensions: [file_storage/all_settings]
       pipelines:
         traces:
           receivers: [otlp]
           exporters: [otlp]
 # ...
 ----
-<1> Specifies the directory in which the telemetry data is stored.
-<2> Specifies the timeout time interval for opening the stored files.
-<3> Starts compaction when the Collector starts. If omitted, the default is `+false+`.
-<4> Specifies the directory in which the compactor stores the telemetry data.
-<5> Defines the maximum size of the compaction transaction. To ignore the transaction size, set to zero. If omitted, the default is `+65536+` bytes.
-<6> When set, forces the database to perform an `fsync` call after each write operation. This helps to ensure database integrity if there is an interruption to the database process, but at the cost of performance.
-<7> Buffers the OTLP Exporter data on the local file system.
-<8> Starts the File Storage Extension by the Collector.
+<1> Example folder to store the data.
+<2> Example directory for the compactor to store data.
+<3> Buffers the OTLP Exporter data on the local file system.
 
-[id="oidcauth-extension_{context}"]
-== OIDC Auth Extension
+.Parameters used by the File Storage Extension
+[options="header"]
+[cols="a,a,a"]
+|===
+|Parameter |Description |Default
 
-The OIDC Auth Extension authenticates incoming requests to receivers by using the OpenID Connect (OIDC) protocol.
-It validates the ID token in the authorization header against the issuer and updates the authentication context of the incoming request.
+|`directory`
+|Specifies the directory where telemetry data is stored.
+|N/A
 
-:FeatureName: The OIDC Auth Extension
+|`timeout`
+|Specifies the timeout time interval for opening stored files.
+|N/A
+
+|`compaction.on_start`
+|Starts compaction when the Collector starts.
+|`false`
+
+|`compaction.directory`
+|Specifies the directory where the compactor stores telemetry data.
+|`/tmp/`
+
+|`compaction.max_transaction_size`
+|Defines the maximum size of the compaction transaction. Set to zero to ignore transaction size.
+|`65536` bytes
+
+|`fsync`
+|Forces the database to perform an `fsync` call after each write operation, ensuring database integrity but affecting performance.
+|`false`
+
+|===
+
+
+=== Troubleshooting the File Storage Extension
+
+The File Storage Extension currently uses link:https://github.com/etcd-io/bbolt[bbolt] to manage reading and writing data to disk.
+
+When troubleshooting components that use the File Storage extension, it can be helpful to examine the raw contents of the files generated by the extension. The easiest way to read these files is by using the `strings` utility, available on both link:https://man7.org/linux/man-pages/man1/strings.1.html[Linux] and link:https://learn.microsoft.com/en-us/sysinternals/downloads/strings[Windows].
+
+==== Telemetry data not being stored or persisted
+
+If telemetry data is not being persisted as expected, consider the following:
+
+.Procedure
+
+- Verify the `directory` path: ensure that the directory specified in `directory` exists and is accessible by the OpenTelemetry Collector. If the directory doesn't exist or the path is incorrect, the extension will not be able to store data.
++
+- Check compaction directory: if you have enabled compaction and set a custom `compaction.directory`, ensure this directory also has the correct permissions for read and write operations.
+
+[id="healthcheck-extension_{context}"]
+== Health Check Extension
+
+The Health Check Extension provides an HTTP URL for checking the status of the OpenTelemetry Collector. You can use this extension as a liveness and readiness probe on OpenShift.
+
+:FeatureName: Health Check Extension
 include::snippets/technology-preview.adoc[]
 
-.OpenTelemetry Collector custom resource with the configured OIDC Auth Extension
+.OpenTelemetry Collector custom resource with the configured Health Check Extension
 [source,yaml]
 ----
 # ...
   config: |
     extensions:
-      oidc:
-        attribute: authorization # <1>
-        issuer_url: https://example.com/auth/realms/opentelemetry # <2>
-        issuer_ca_path: /var/run/tls/issuer.pem # <3>
-        audience: otel-collector # <4>
-        username_claim: email # <5>
+      health_check:
+        endpoint: "0.0.0.0:13133"
+        tls: # <1>
+          ca_file: "/path/to/ca.crt"
+          cert_file: "/path/to/cert.crt"
+          key_file: "/path/to/key.key"
+        path: "/health/status" # <2>
+
     receivers:
       otlp:
         protocols:
-          grpc:
-            auth:
-              authenticator: oidc
+          http: {}
+
     exporters:
       otlp:
-        endpoint: <endpoint>
+
     service:
-      extensions: [oidc]
+      extensions: [health_check]
       pipelines:
         traces:
           receivers: [otlp]
           exporters: [otlp]
 # ...
 ----
-<1> The name of the header that contains the ID token. The default name is `authorization`.
-<2> The base URL of the OIDC provider.
-<3> Optional: The path to the issuer's CA certificate.
-<4> The audience for the token.
-<5> The name of the claim that contains the username. The default name is `sub`.
+<1> Example TLS config.
+<2> Example path to check the server.
+
+.Parameters used by the Health Check Extension
+[options="header"]
+[cols="a,a,a"]
+|===
+|Parameter |Description |Default
+
+|`endpoint`
+|The target IP address for publishing the health check status. Note that the OpenTelemetry Collector exposes this port in the `<OpenTelemetry Collector instance name>-collector` service automatically.
+|`0.0.0.0:13133`
+
+|`tls`
+|The TLS server-side configuration. Defines paths to TLS certificates. If omitted, TLS is disabled.
+|N/A
+
+|`path`
+|The path for the health check server.
+|`/`
+
+|===
+
+=== Troubleshooting the Health Check Extension
+
+The Health Check Extension provides an HTTP URL for checking the status of the OpenTelemetry Collector. It can be used as a liveness and readiness probe in environments such as OpenShift.
+
+==== Health check URL not reachable
+
+If the health check URL is not reachable, consider the following:
+
+.Procedure
+
+- Verify the `path`: ensure the health check `path` is correctly configured and matches the one being accessed. The default path is `/`, but it can be customized as needed (e.g., `/health/status`).
++
+- Check the HTTP request: confirm that the correct HTTP request is being made to the right URL, including the correct port and path.
+
+==== TLS-related issues
+
+If the health check endpoint using TLS is not working as expected, consider the following:
+
+.Procedure
+
+- Verify the TLS certificate paths: ensure the `ca_file`, `cert_file`, and `key_file` paths are correct and accessible by the OpenTelemetry Collector.
++
+- Check file permissions: confirm that the OpenTelemetry Collector has the necessary read permissions for the TLS certificate and key files.
++
+- Ensure TLS is enabled: if using TLS, ensure the TLS configuration is correctly set and not omitted.
+
+==== Health check status incorrect
+
+If the health check status is incorrect or not reflecting the actual state of the OpenTelemetry Collector, consider the following:
+
+.Procedure
+
+- Check the OpenTelemetry Collector logs: review the Collector logs to identify any issues affecting the health check status, such as pipeline errors or misconfigurations.
++
+- Verify readiness and liveness: ensure the OpenTelemetry Collector is fully initialized and that all components are properly configured and running. A misconfigured pipeline can result in an unhealthy status.
+
 
 [id="jaegerremotesampling-extension_{context}"]
 == Jaeger Remote Sampling Extension
@@ -221,10 +294,10 @@ include::snippets/technology-preview.adoc[]
     extensions:
       jaegerremotesampling:
         source:
-          reload_interval: 30s # <1>
+          reload_interval: 30s
           remote:
-            endpoint: jaeger-collector:14250 # <2>
-          file: /etc/otelcol/sampling_strategies.json # <3>
+            endpoint: jaeger-collector:14250 # <1>
+          file: /etc/otelcol/sampling_strategies.json # <2>
 
     receivers:
       otlp:
@@ -242,9 +315,8 @@ include::snippets/technology-preview.adoc[]
           exporters: [otlp]
 # ...
 ----
-<1> The time interval at which the sampling configuration is updated.
-<2> The endpoint for reaching the Jaeger remote sampling strategy provider.
-<3> The path to a local file that contains a sampling strategy configuration in the JSON format.
+<1> Example endpoint to reach the Jaeger remote sampling strategy provider.
+<2> Example local file containing the configuration.
 
 .Example of a Jaeger Remote Sampling strategy file
 [source,json]
@@ -293,6 +365,367 @@ include::snippets/technology-preview.adoc[]
 }
 ----
 
+The Jaeger Sampling Configuration files are described in the link:https://www.jaegertracing.io/docs/latest/sampling/#file-based-sampling-configuration[official Jaeger documentation].
+
+.Parameters used by the Jaeger Remote Sampling Extension
+[options="header"]
+[cols="a,a,a"]
+|===
+|Parameter |Description |Default
+
+|`source.reload_interval`
+|The time interval at which the sampling configuration is updated.
+|`30s`
+
+|`source.remote.endpoint`
+|The endpoint for reaching the Jaeger remote sampling strategy provider.
+|N/A
+
+|`source.file`
+|The path to a local file that contains a sampling strategy configuration in JSON format.
+|N/A
+|===
+
+=== Troubleshooting the Jaeger Remote Sampling Extension
+
+The Jaeger Remote Sampling Extension enables serving sampling strategies using Jaeger's remote sampling API. It can proxy requests to a remote sampling server like a Jaeger collector or use a local static JSON file.
+
+==== Sampling strategies not being applied as expected
+
+If the sampling strategies are not working as expected, consider the following:
+
+.Procedure
+
+- Verify the sampling strategy configuration: check that the sampling strategy, whether from a remote endpoint or a local file, is properly formatted.
++
+- Ensure the correct source is configured: if both remote and file sources are configured, confirm that the correct one is active.
++
+- Check the sampling strategy parameters: verify that the `param` values and the strategy type (e.g., `probabilistic`, `ratelimiting`) are correctly set.
++
+- Check the file path: verify that the `source.file` path points to the correct file, and ensure it exists.
++
+- Verify file permissions: confirm that the OpenTelemetry Collector has the necessary permissions to read the file.
++
+- Check the file format: ensure the JSON file is correctly formatted and matches the Jaeger sampling strategy schema.
+
+==== Failure to load remote sampling strategies
+
+If the extension fails to load remote sampling strategies, consider the following:
+
+.Procedure
+
+- Check the `source.remote.endpoint`: ensure the endpoint is correctly configured and reachable.
++
+- Inspect logs for errors: review the OpenTelemetry Collector logs for any errors related to remote sampling, such as API response issues or connectivity problems.
+
+
+[id="memory-ballast-extension_{context}"]
+== Memory Ballast Extension
+
+The Memory Ballast Extension enables applications to configure memory ballast for the process.
+
+:FeatureName: The Memory Ballast Extension
+include::snippets/technology-preview.adoc[]
+
+[IMPORTANT]
+====
+The Memory Ballast Extension is deprecated. Users currently relying on this extension should migrate to setting the link:https://pkg.go.dev/runtime#hdr-Environment_Variables[GOMEMLIMIT] environment variable.
+
+To migrate, set the `GOMEMLIMIT` value to 80% of the Collector's hard memory limit. For example, if the Collector's hard memory limit is 1GiB, configure `GOMEMLIMIT` to 800MiB.
+====
+
+.OpenTelemetry Collector custom resource with the configured Memory Ballast Extension
+[source,yaml]
+----
+# ...
+  config: |
+    extensions:
+      memory_ballast:
+        size_mib: 64
+        size_in_percentage: 20
+
+    receivers:
+      otlp:
+        protocols:
+          http: {}
+
+    exporters:
+      debug:
+
+    service:
+      extensions: [memory_ballast]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
+# ...
+----
+
+.Parameters used by the Memory Ballast Extension
+[options="header"]
+[cols="a,a,a"]
+|===
+|Parameter |Description |Default
+
+|`size_mib`
+|Sets the memory ballast size in MiB. Takes priority over `size_in_percentage` if both are specified.
+|N/A
+
+|`size_in_percentage`
+|Sets the memory ballast as a percentage, `1`-`100`, of the total memory. This works in both containerized and physical host environments.
+|N/A
+|===
+
+[id="oauth2client-extension_{context}"]
+== OAuth2Client Extension
+
+The OAuth2Client Extension is an authenticator for exporters that are based on the HTTP and the gRPC protocol.
+Client authentication for the OAuth2Client Extension is configured in a separate section in the OpenTelemetry Collector custom resource.
+This extension supports traces, metrics, and logs.
+
+:FeatureName: The OAuth2Client Extension
+include::snippets/technology-preview.adoc[]
+
+.OpenTelemetry Collector custom resource with client authentication configured for the OAuth2Client Extension
+[source,yaml]
+----
+# ...
+  config: |
+    extensions:
+      oauth2client:
+        client_id: clientID # <1>
+        client_id_file: /path/client_id_file # <2>
+        client_secret: someclientsecret # <3>
+        client_secret_file: /path/client_secret # <4>
+        endpoint_params:
+          audience: exampleaudience # <5>
+        token_url: https://example.com/oauth2/default/v1/token # <6>
+        scopes: ["api.metrics"]
+        tls: # <7>
+          insecure: false
+          ca_file: "/path/to/ca.crt"
+          cert_file: "/path/to/cert.crt"
+          key_file: "/path/to/key.key"
+        timeout: 2s
+
+    receivers:
+      otlp:
+        protocols:
+          http: {}
+
+    exporters:
+      otlp:
+        auth:
+          authenticator: oauth2client # <8>
+
+    service:
+      extensions: [oauth2client]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [otlp]
+# ...
+----
+<1> Example client ID.
+<2> Example file client ID.
+<3> Example client secret.
+<4> Example client secret file.
+<5> Example audience.
+<6> Example token URL.
+<7> When set to `true`, configures the Collector to use an insecure or non-verified TLS connection to call the configured token endpoint.
+<8> You can assign the authenticator configuration to an OTLP exporter.
+
+.Parameters used by the OAuth2Client Extension
+[options="header"]
+[cols="a,a,a"]
+|===
+|Parameter |Description |Default
+
+|`client_id`
+|Client identifier, provided by the identity provider.
+|N/A
+
+|`client_id_file`
+|File containing the client ID. The extension reads this file and updates the client ID used whenever it needs to issue a new token. This setting takes precedence over `client_id`.
+|N/A
+
+|`client_secret`
+|Confidential key used to authenticate the client to the identity provider.
+|N/A
+
+|`client_secret_file`
+|File containing the confidential key used to authenticate the client to the identity provider. The extension reads this file and updates the secret used whenever it needs to issue a new token. This setting takes precedence over `client_secret`.
+|N/A
+
+|`endpoint_params`
+|Additional metadata in key-value pairs transferred during authentication (e.g., `audience`).
+|N/A
+
+|`token_url`
+|URL of the OAuth2 token endpoint where the Collector requests access tokens.
+|N/A
+
+|`scopes`
+|Defines the specific permissions or access levels requested by the client.
+|`["api.metrics"]`
+
+|`tls.insecure`
+|When set to `true`, allows an insecure or non-verified TLS connection to the token endpoint.
+|`false`
+
+|`tls.ca_file`
+|Path to a Certificate Authority (CA) file used to verify the server's certificate during the TLS handshake.
+|N/A
+
+|`tls.cert_file`
+|Path to the client certificate file used for client authentication.
+|N/A
+
+|`tls.key_file`
+|Path to the client's private key file used with the client certificate.
+|N/A
+
+|`timeout`
+|Sets a timeout for the token client's request.
+|`2s`
+
+|===
+
+=== Troubleshooting the OAuth2Client Extension
+
+The OAuth2Client Extension is an authenticator for exporters based on HTTP and gRPC protocols. It supports authentication for traces, metrics, and logs.
+
+==== Client authentication failure
+
+If the OAuth2Client Extension fails to authenticate with the identity provider, consider the following:
+
+.Procedure
+
+- Verify the `client_id` and `client_secret`: ensure the `client_id` and `client_secret` are correctly configured and match the values provided by the identity provider.
++
+- Check the file paths: if using `client_id_file` or `client_secret_file`, verify that the paths are correct and that the files are accessible.
++
+- Inspect token URL: ensure that the `token_url` is correctly set and reachable.
+
+==== Token not being retrieved or refreshed
+
+If the OAuth2Client Extension is unable to retrieve or refresh tokens, consider the following:
+
+.Procedure
+
+- Check the `token_url`: ensure the OAuth2 token endpoint is correct and reachable by the OpenTelemetry Collector.
++
+- Verify `scopes`: ensure the requested `scopes` are correct and the client has permission for those scopes.
++
+- Confirm TLS settings: if using TLS, ensure that the CA, certificate, and key files are correctly configured and accessible.
+
+
+[id="oidcauth-extension_{context}"]
+== OIDC Auth Extension
+
+The OIDC Auth Extension authenticates incoming requests to receivers by using the OpenID Connect (OIDC) protocol.
+It validates the ID token in the authorization header against the issuer and updates the authentication context of the incoming request.
+
+:FeatureName: The OIDC Auth Extension
+include::snippets/technology-preview.adoc[]
+
+.OpenTelemetry Collector custom resource with the configured OIDC Auth Extension
+[source,yaml]
+----
+# ...
+  config: |
+    extensions:
+      oidc:
+        attribute: authorization
+        issuer_url: https://example.com/auth/realms/opentelemetry # <1>
+        issuer_ca_path: /var/run/tls/issuer.pem # <2>
+        audience: otel-collector # <3>
+        username_claim: email # <4>
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            auth:
+              authenticator: oidc # <5>
+    exporters:
+      debug:
+
+    service:
+      extensions: [oidc]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [debug]
+# ...
+----
+<1> Example base URL OIDC provider.
+<2> Example issues CA's certificate.
+<3> Example audience.
+<4> Example username.
+<5> The extension can be used as authenticator for a receiver.
+
+.Parameters used by the OIDC Auth Extension
+[options="header"]
+[cols="a,a,a"]
+|===
+|Parameter |Description |Default
+
+|`attribute`
+|The name of the header that contains the ID token.
+|`authorization`
+
+|`issuer_url`
+|The base URL of the OIDC provider.
+|N/A
+
+|`issuer_ca_path`
+|Optional: The path to the issuer's CA certificate.
+|N/A
+
+|`audience`
+|The audience for the token.
+|N/A
+
+|`username_claim`
+|The name of the claim that contains the username.
+|`sub`
+|===
+
+=== Troubleshooting the OIDC Auth Extension
+
+The OIDC Auth Extension authenticates incoming requests to receivers using the OpenID Connect (OIDC) protocol. It validates ID tokens in the authorization header and updates the authentication context of the incoming request.
+
+==== Authentication failure
+
+If incoming requests fail to authenticate, consider the following:
+
+.Procedure
+
+- Verify the `issuer_url`: ensure that the `issuer_url` is correctly set to the base URL of the OIDC provider.
++
+- Check the `audience`: confirm that the audience in the token matches the value specified in the `audience` field of the configuration.
++
+- Ensure the `attribute` is correct: verify that the header containing the ID token matches the value set in the `attribute` parameter (default is `authorization`).
+
+==== Issues with the issuer's CA certificate
+
+If the extension fails to validate the issuer's certificate, consider the following:
+
+.Procedure
+
+- Verify the `issuer_ca_path`: ensure the path to the issuer's CA certificate is correct and that the OpenTelemetry Collector has access to the file.
++
+- Check CA file permissions: confirm that the Collector has the necessary read permissions for the CA file.
+
+==== Username claim issues
+
+If the username is not being extracted correctly, consider the following:
+
+.Procedure
+
+- Verify the `username_claim`: check that the `username_claim` is correctly set and that the ID token includes this claim (default is `sub`).
+
+
 [id="pprof-extension_{context}"]
 == Performance Profiler Extension
 
@@ -329,98 +762,53 @@ include::snippets/technology-preview.adoc[]
           exporters: [otlp]
 # ...
 ----
-<1> The endpoint at which this extension listens. Use `localhost:` to make it available only locally or `":"` to make it available on all network interfaces. The default value is `localhost:1777`.
+<1> The endpoint at which this extension listens. The default value is `localhost:1777`.
 <2> Sets a fraction of blocking events to be profiled. To disable profiling, set this to `0` or a negative integer. See the link:https://golang.org/pkg/runtime/#SetBlockProfileRate[documentation] for the `runtime` package. The default value is `0`.
 <3> Set a fraction of mutex contention events to be profiled. To disable profiling, set this to `0` or a negative integer. See the link:https://golang.org/pkg/runtime/#SetMutexProfileFraction[documentation] for the `runtime` package. The default value is `0`.
 <4> The name of the file in which the CPU profile is to be saved. Profiling starts when the Collector starts. Profiling is saved to the file when the Collector is terminated.
 
-[id="healthcheck-extension_{context}"]
-== Health Check Extension
+=== Go Profiling with pprof Basics
 
-The Health Check Extension provides an HTTP URL for checking the status of the OpenTelemetry Collector. You can use this extension as a liveness and readiness probe on OpenShift.
+The profiler is a tool used to optimize a program by identifying areas where it consumes the most resources. The most common use case is CPU profiling, which shows where the program spends the majority of its time while actively consuming resources. After generating a profile, it can be interpreted in several ways. Go's _pprof_ supports text-based, visual, and web-based analysis.
 
-:FeatureName: The Health Check Extension
-include::snippets/technology-preview.adoc[]
+To collect an accurate profile, it's recommended to run the profiler on an idle machine. If this isn't feasible, generate the profile multiple times to get consistent results.
 
-.OpenTelemetry Collector custom resource with the configured Health Check Extension
-[source,yaml]
+The profiler works by stopping the program multiple times per second and capturing data (such as program counters) during each pause. This data is called a sample, and a profile is a collection of these samples.
+
+==== Generating a Profile
+
+The _pprof_ extension enables the collection of profiling data. To generate a profile, include the extension in your program and start the server. If you're using the default configuration, it will listen on `localhost:1777`.
+
+To save a CPU profile to your machine, run:
+
+[source,console]
 ----
-# ...
-  config: |
-    extensions:
-      health_check:
-        endpoint: "0.0.0.0:13133" # <1>
-        tls: # <2>
-          ca_file: "/path/to/ca.crt"
-          cert_file: "/path/to/cert.crt"
-          key_file: "/path/to/key.key"
-        path: "/health/status" # <3>
-        check_collector_pipeline: # <4>
-          enabled: true # <5>
-          interval: "5m" # <6>
-          exporter_failure_threshold: 5 # <7>
-
-    receivers:
-      otlp:
-        protocols:
-          http: {}
-
-    exporters:
-      otlp:
-
-    service:
-      extensions: [health_check]
-      pipelines:
-        traces:
-          receivers: [otlp]
-          exporters: [otlp]
-# ...
+$ go tool pprof http://localhost:1777/debug/pprof/profile?seconds=30
 ----
-<1> The target IP address for publishing the health check status. The default is `0.0.0.0:13133`.
-<2> The TLS server-side configuration. Defines paths to TLS certificates. If omitted, the TLS is disabled.
-<3> The path for the health check server. The default is `/`.
-<4> Settings for the Collector pipeline health check.
-<5> Enables the Collector pipeline health check. The default is `false`.
-<6> The time interval for checking the number of failures. The default is `5m`.
-<7> The threshold of multiple failures until which a container is still marked as healthy. The default is `5`.
 
-[id="memory-ballast-extension_{context}"]
-== Memory Ballast Extension
+This command will enter _pprof_'s interactive mode, where you can analyze the profile.
 
-The Memory Ballast Extension enables applications to configure memory ballast for the process.
+For other types of profiles, different endpoints are available. For example, to analyze memory usage, run:
 
-:FeatureName: The Memory Ballast Extension
-include::snippets/technology-preview.adoc[]
-
-.OpenTelemetry Collector custom resource with the configured Memory Ballast Extension
-[source,yaml]
+[source,console]
 ----
-# ...
-  config: |
-    extensions:
-      memory_ballast:
-        size_mib: 64 # <1>
-        size_in_percentage: 20 # <2>
-
-    receivers:
-      otlp:
-        protocols:
-          http: {}
-
-    exporters:
-      otlp:
-
-    service:
-      extensions: [memory_ballast]
-      pipelines:
-        traces:
-          receivers: [otlp]
-          exporters: [otlp]
-# ...
+$ go tool pprof http://localhost:1777/debug/pprof/heap
 ----
-<1> Sets the memory ballast size in MiB. Takes priority over the `size_in_percentage` if both are specified.
-<2> Sets the memory ballast as a percentage, `1`-`100`, of the total memory. Supports containerized and physical host environments.
 
+
+To see all available profiles, visit `http://localhost:1777/debug/pprof/` in your browser.
+
+=== Analyzing a Profile
+
+Once you run the command to save a profile, _pprof_ enters interactive mode, where you can begin analyzing the data.
+
+Use the `web` command to generate an image of the entire call graph, which opens in your browser. Each box in the graph represents a function, and the size of the box corresponds to how frequently the function was running during the profiling session. Larger boxes indicate more frequent execution. Arrows between boxes show function calls; for example, if there is an arrow from box A to B, it means function A called function B. The numbers along the arrows represent how often that call occurred, including recursive calls. Edge colors indicate resource usage, with red representing higher usage and grey indicating minimal usage.
+
+The complete call graph can be overwhelming, so it is often helpful to start with the `topN` command, which shows the top `N` functions consuming the most resources. The output is a table where the first two columns show the number and percentage of samples in which each function was running (`flat`). The third column displays the cumulative percentage of samples, while the last two columns show cumulative statistics for the profile.
+
+Once you have identified a high-resource-consuming function, you can filter the results. Use the `web <function name>` command to visualize the call graph for that specific function. The resulting graph will be clearer and easier to interpret.
+
+The `list` command is another helpful tool. Running `list <function name>` shows the source code of the function, annotated with resource consumption data similar to the `topN` command. If you'd like to see the results in your browser, use the `weblist <function name>` command instead. This view shows which specific lines of code consume the most resources, allowing you to focus your optimization efforts.
 
 [id="zpages-extension_{context}"]
 == zPages Extension
